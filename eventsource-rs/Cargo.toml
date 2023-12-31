@@ -1,0 +1,28 @@
+[package]
+name = "event-source-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# sse-client = "1.1.1" # TODO Remove
+# js-sys = "0.3.66"
+# wasm-bindgen = "0.2"
+# web-sys = "0.3.66"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sse-client = "1.1.1"
+
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3.66", features = [
+    "Event",
+    "ErrorEvent",
+    "EventSource",
+    "EventSourceInit",
+    "EventListener",
+    "MessageEvent",
+] }
+js-sys = "0.3.66"

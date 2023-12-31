@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.linkedProjects": [
+        ".\\eventsource-rs\\Cargo.toml",
+        ".\\pocketbase-sdk-rs\\Cargo.toml",
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false
+}

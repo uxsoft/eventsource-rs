@@ -1,0 +1,14 @@
+[package]
+name = "pocketbase-sdk-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.78"
+serde = { features = ["derive"], version = "1.0.193" }
+serde_json = "1.0.108"
+spinta = "0.1.5"
+tokio = { features = ["full"], version = "1.35.1" }
+ureq = { features = ["json"], version = "2.9.1" }
