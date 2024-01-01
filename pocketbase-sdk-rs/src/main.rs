@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
+use eventsource_rs::{Event, EventSource, Subscribable};
 use serde::Deserialize;
-use spinta::EsEvent;
 use ureq::*;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -46,8 +46,6 @@ struct RecordBase {
     updated: String,
 }
 
-const ENDPOINT: &str = "http://localhost:8090/api/realtime";
-
 struct Subscription {
     topic: String,
     callback: fn(String) -> (),
@@ -56,6 +54,7 @@ struct Subscription {
 struct RealtimeManager {
     subscriptions: Vec<Subscription>,
     client_id: Option<String>,
+    es: eventsource_rs::EventSource,
 }
 
 impl RealtimeManager {
@@ -105,61 +104,46 @@ impl RealtimeManager {
         };
     }
 
-    pub fn new() -> Self {
-        Self {
+    pub fn new(url: &str) -> Result<Self, String> {
+        let es = EventSource::new(url)?;
+
+        Ok(Self {
             subscriptions: Vec::new(),
             client_id: None,
-        }
+            es: es as EventSource,
+        })
     }
 
-    fn on_message(&mut self, event: EsEvent) {
-        match event {
-            spinta::EsEvent::Opened => {
-                println!("Opened");
-            }
-            spinta::EsEvent::Message(payload) => {
-                println!("Message `{}`", payload);
+    fn on_message(&mut self, event: Event) {
+        println!("Message `{}`", event.data);
 
-                let message_opt = serde_json::from_str::<ConnectMessage>(payload.as_str());
-                if let Ok(message) = message_opt {
-                    println!("Client Id: {}", message.client_id);
-                    self.client_id = Some(message.client_id);
-                    self.post_subscriptions();
-                }
+        let message_opt = serde_json::from_str::<ConnectMessage>(&event.data);
+        if let Ok(message) = message_opt {
+            println!("Client Id: {}", message.client_id);
+            self.client_id = Some(message.client_id);
+            self.post_subscriptions();
+        }
 
-                let change_opt =
-                    serde_json::from_str::<RecordChangedMessage<RecordBase>>(payload.as_str());
-                if let Ok(change) = change_opt {
-                    println!("Change: {:?}", change);
-                    self.notify(change.record.collection_name, payload);
-                }
-            }
-            spinta::EsEvent::Error(e) => {
-                eprintln!("Error: `{}`", e);
-            }
-            spinta::EsEvent::Closed => {
-                println!("Closed");
-            }
+        let change_opt = serde_json::from_str::<RecordChangedMessage<RecordBase>>(&event.data);
+        if let Ok(change) = change_opt {
+            println!("Change: {:?}", change);
+            self.notify(change.record.collection_name, event.data);
         }
     }
 
     pub fn connect(&mut self) {
-        let receiver =
-            spinta::connect(ENDPOINT).expect("Failed to connect to the server over SSE.");
-
-        let receiver = spinta::connect_with_wakeup(ENDPOINT, || {
-            println!("Houston, we have an event!");
-            while let Some(event) = receiver.try_recv() {
-                self.on_message(event);
-            }
-        });
-
+        // self.es.subscribe("message", move |e| {
+        //     self.on_message(e.clone());
+        //     println!("{}", e.data)
+        // }).unwrap();
     }
 }
 
+const ENDPOINT: &str = "http://localhost:8090/api/realtime";
+
 #[tokio::main]
 async fn main() {
-    let mut realtime = RealtimeManager::new();
+    let mut realtime = RealtimeManager::new(ENDPOINT).unwrap();
 
     realtime.connect();
 

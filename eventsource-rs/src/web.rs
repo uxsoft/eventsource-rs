@@ -2,15 +2,15 @@ use js_sys::wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use std::collections::HashMap;
 use web_sys::MessageEvent;
 
-pub struct WebEventSource {
+pub struct EventSource {
     es: web_sys::EventSource,
     listeners: HashMap<usize, js_sys::Function>,
     event_types: HashMap<usize, String>,
     id_counter: usize,
 }
 
-impl crate::EventSource for WebEventSource {
-    fn new(url: &str) -> Result<impl crate::EventSource, String> {
+impl crate::Subscribable for EventSource {
+    fn new(url: &str) -> Result<Self, String> {
         let es = web_sys::EventSource::new(url).map_err(js_value_to_string)?;
 
         Ok(Self {
@@ -30,7 +30,7 @@ impl crate::EventSource for WebEventSource {
         }
     }
 
-    fn add_event_listener(
+    fn subscribe(
         &mut self,
         event_type: impl Into<String>,
         callback: impl Fn(crate::Event) -> () + 'static,
@@ -63,7 +63,7 @@ impl crate::EventSource for WebEventSource {
         result.map(|_| id)
     }
 
-    fn remove_event_listener(&mut self, id: usize) -> Result<(), String> {
+    fn unsubscribe(&mut self, id: usize) -> Result<(), String> {
         let callback = self.listeners.get(&id).unwrap();
         let event_type = self.event_types.get(&id).unwrap();
 
@@ -90,9 +90,9 @@ fn js_value_to_string(item: JsValue) -> String {
     js_sys::JSON::stringify(&item).unwrap().into()
 }
 
-impl Drop for WebEventSource {
+impl Drop for EventSource {
     fn drop(&mut self) {
-        use crate::EventSource;
+        use crate::Subscribable;
 
         self.close_and_notify();
     }

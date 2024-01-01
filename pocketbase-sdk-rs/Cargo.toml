@@ -9,6 +9,6 @@ edition = "2021"
 anyhow = "1.0.78"
 serde = { features = ["derive"], version = "1.0.193" }
 serde_json = "1.0.108"
-spinta = "0.1.5"
+eventsource-rs = { path = "../eventsource-rs" }
 tokio = { features = ["full"], version = "1.35.1" }
 ureq = { features = ["json"], version = "2.9.1" }

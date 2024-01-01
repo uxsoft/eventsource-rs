@@ -1,7 +1,7 @@
-// #[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub mod native;
 
-// #[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub use native::*;
 
 #[cfg(target_arch = "wasm32")]
@@ -16,20 +16,21 @@ pub enum ReadyState {
     Closed = 2,
 }
 
+#[derive(Debug, Clone)]
 pub struct Event {
-    event_type: String,
-    data: String,
+    pub event_type: String,
+    pub data: String,
 }
 
-pub trait EventSource {
-    fn new(url: &str) -> Result<impl EventSource, String>;
+pub trait Subscribable {
+    fn new(url: &str) -> Result<EventSource, String>;
     fn state(&self) -> ReadyState;
     fn close(&mut self);
     fn close_and_notify(&mut self);
-    fn add_event_listener(
+    fn subscribe(
         &mut self,
         event_type: impl Into<String>,
-        callback: impl Fn(Event) -> () + 'static,
+        callback: impl Fn(Event) -> () + 'static + Send + Sync,
     ) -> Result<usize, String>;
-    fn remove_event_listener(&mut self, id: usize) -> Result<(), String>;
+    fn unsubscribe(&mut self, id: usize) -> Result<(), String>;
 }
